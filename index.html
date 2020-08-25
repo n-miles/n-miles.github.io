@@ -1,0 +1,86 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Satisfactory Crafting Graph</title>
+  </head>
+
+  <body>
+    <label for="recipe-select-top">Recipe Selection:</label>
+    <select name="recipe-select-top" id = "recipe-select-top" onchange="selectItemToChangeRecipe()"></select>
+    <select name="recipe-select-bottom" id = "recipe-select-bottom" hidden="true" onchange="changeRecipe()"></select>
+
+    <p>Item</p>
+    <select name="item-selection" id="item-selection"></select>
+    <p>Amount</p>
+    <input type="text" id="amount-input">
+    <button type="button" onclick="submit()">Calculate</button>
+
+    <div id = "svgcontainer"></div>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/scripts.js"></script>
+    <script>
+      function submit() {
+        let item = document.getElementById("item-selection").value
+        let amount = Number.parseFloat(document.getElementById("amount-input").value)
+
+        let tree = calculate(item, amount)
+        renderTree(tree)
+      }
+
+      let topMenu = document.getElementById("recipe-select-top")
+      let itemSelection = document.getElementById("item-selection")
+
+
+      Object.keys(recipeTree).sort().forEach(item => {
+        topMenu.innerHTML += `<option value="${item}">${item}</option>`
+        itemSelection.innerHTML += `<option value="${item}">${item}</option>`
+      })
+
+      topMenu.value = ""
+      itemSelection.value = ""
+
+      function selectItemToChangeRecipe() {
+        let itemRecipeSelection = document.getElementById("recipe-select-bottom")
+        itemRecipeSelection.hidden = false
+        itemRecipeSelection.innerHTML = ""
+
+        recipeTree[document.getElementById("recipe-select-top").value].forEach(recipe => {
+          itemRecipeSelection.innerHTML += `<option value="${recipe.display_name}">${renderRecipe(recipe)}</option>`
+        })
+      }
+
+      function renderRecipe(recipe) {
+        let ingredients = recipe.ingredients.map(i => i.item).join(', ')
+        return recipe.display_name + " [" + ingredients + " -> " + recipe.products[0].item + "]"
+      }
+
+      function changeRecipe() {
+        let newRecipe = document.getElementById("recipe-select-bottom").value
+
+        let recipesForItem = recipeTree[document.getElementById("recipe-select-top").value]
+        var i = 0
+        for (; i < recipesForItem.length; i++) {
+          if (recipesForItem[i].display_name === newRecipe) {
+            break
+          }
+        }
+        let recipeObject = recipesForItem[i]
+
+        recipesForItem.splice(i, 1)
+        recipesForItem.unshift(recipeObject)
+
+        submit()
+      }
+    </script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/d3-array@1"></script>
+    <script src="https://unpkg.com/d3-collection@1"></script>
+    <script src="https://unpkg.com/d3-path@1"></script>
+    <script src="https://unpkg.com/d3-shape@1"></script>
+    <script src="https://unpkg.com/d3-sankey@0"></script>
+  </body>
+</html>
