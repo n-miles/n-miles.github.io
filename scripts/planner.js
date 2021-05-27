@@ -121,30 +121,74 @@ function BuildingDetail({factory, factoryMutator}) {
 }
 
 function BuildingGroup({group, groupMutator, deleteGroup}) {
+
+  const [recipeSearchText, setRecipeSearchText] = useState('');
+  const [hasFocus, setHasFocus] = useState(false);
+
+  const lowerCaseSearchText = recipeSearchText.toLowerCase();
+  
   const updateBuilding = event => groupMutator(newGroup => {
     newGroup.building = buildingMap[event.target.value];
     newGroup.recipe = getRecipes(newGroup.building)[0];
   });
-  const updateRecipe = event => groupMutator(newGroup => {
-    newGroup.recipe = newGroup.building.recipes[event.target.value];
-  });
   const updateBuildingNumber = event => groupMutator(newGroup => {
     newGroup.number = sanitizePositiveNumber(event.target.value);
   });
+
+  const matchingRecipes = hasFocus && getRecipes(group.building)
+      .filter(r => r.name.toLowerCase().includes(lowerCaseSearchText)
+              || r.ingredients.some(i => i.item.toLowerCase().includes(lowerCaseSearchText))
+              || r.products.some(i => i.item.toLowerCase().includes(lowerCaseSearchText))
+      );
+
   return (
     <div className="building-group-container">
       <DeleteBuildingButton deleteGroup={deleteGroup}/>
       <select key="building" value={group.name} onChange={updateBuilding}>
         {buildingList.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
       </select>
-      Count:
+      #
       <input type="text" value={group.number} onChange={updateBuildingNumber}></input>
       <br/>
-      <select key="recipe" value={group.name} onChange={updateRecipe}>
-        {getRecipes(group.building).map(recipe =>
-          <option key={recipe.name} value={recipe.name}>{recipe.name}: ({recipe.ingredients.map(i => (i.rate * group.number) + " " + i.item).join(', ')}) -&gt; ({recipe.products.map(i => (i.rate * group.number) + " " + i.item).join(', ')})</option>)
-        }
-      </select>
+      Recipe Search:
+      <input type="text" value={recipeSearchText}
+        onChange={e => setRecipeSearchText(e.target.value)}
+        onFocus={e => setHasFocus(true)}
+        onBlur={e => setTimeout(() => setHasFocus(false), 100)}></input>
+      {
+        hasFocus && 
+          <div className="recipe-results">
+            {matchingRecipes.length == 0 ? "No results." :
+              <ul className="recipe-search-results-list">
+                {matchingRecipes.map(r =>
+                  <li key={r.name} className="recipe-search-result" onClick={() => groupMutator(g => g.recipe = r)}>
+                    {r.name}
+                    <br/>
+                    ({r.ingredients.map(i => `${i.rate}/m ${i.item}`).join(', ')}) -&gt; ({r.products.map(i => `${i.rate}/m ${i.item}`).join(', ')})
+                  </li>
+                )}
+              </ul>
+            }
+          </div>
+      }
+      <p className="recipe-details-name">{group.recipe.name}</p>
+      <div className="recipe-details">
+        <div className="recipe-details-inputs">
+          {group.recipe.ingredients.map(i =>
+            <p key={i.item}>
+              <span className="recipe-details-item-name">{i.item}</span>
+              <span className="recipe-details-item-number">{formatNumber(i.rate * group.number)}/m</span>
+            </p>)}
+        </div>
+        <div className="recipe-arrow">--&gt;</div>
+        <div className="recipe-details-outputs">
+          {group.recipe.products.map(i =>
+            <p key={i.item}>
+              <span className="recipe-details-item-name">{i.item}</span>
+              <span className="recipe-details-item-number">{formatNumber(i.rate * group.number)}/m</span>
+            </p>)}
+        </div>
+      </div>
     </div>
   );
 }
