@@ -6,16 +6,20 @@ function useState(arg) {
 
 function Planner(props) {
   const [factory, setFactory] = useState([]);
+  const factoryMutator = (f) => {
+    const newFactory = [...factory];
+    f(newFactory);
+    setFactory(newFactory);
+  }
   return (
-    <div>
-      <BuildingSelection factory={factory} setFactory={setFactory}/>
+    <div className="planner-container">
       <Summary factory={factory}/>
-      <BuildingDetail factory={factory}/>
+      <BuildingDetail factory={factory} factoryMutator={factoryMutator}/>
     </div>
   )
 }
 
-const buildingList = Object.entries(buildingMap).map(b => b[1]);
+const buildingList = Object.entries(buildingMap).map(b => b[1]).sort((b1, b2) => b1.name.localeCompare(b2.name));
 
 function BuildingSelection({factory, setFactory}) {
   const [selectedBuilding, setSelectedBuilding] = useState(buildingList[0]);
@@ -48,7 +52,6 @@ function BuildingSelection({factory, setFactory}) {
 
 function Summary({factory}) {
   const totals = factory.reduce((counters, item) => {
-    console.log(item);
     item.recipe.ingredients.forEach(i => {
       if (!counters[i.item]) {
         counters[i.item] = 0;
@@ -63,40 +66,102 @@ function Summary({factory}) {
     });
     return counters;
   }, {});
-  console.log(totals);
 
   const inputs = Object.entries(totals)
       .filter(t => t[1] > 0)
-      .map(t => <p key={t[0]}>{t[0]}: {formatNumber(t[1])}</p>);
+      .map(t =>
+        <li key={t[0]} className="summary-input-item">
+          <span className="summary-input-item-name">{t[0]}</span><span className="summary-input-item-quantity">{formatNumber(t[1])}/m</span>
+        </li>);
   const outputs = Object.entries(totals)
       .filter(t => t[1] < 0)
-      .map(t => <p key={t[0]}>{t[0]}: {formatNumber(-t[1])}</p>);
+      .map(t =>
+        <li key={t[0]} className="summary-output-item">
+          <span className="summary-output-item-name">{t[0]}</span><span className="summary-input-item-quantity">{formatNumber(-t[1])}/m</span>
+        </li>);
 
   return (
-    <div>
-      <h1>Summary</h1>
-      <h3>Inputs</h3>
-      {inputs.length == 0 ? <p>None</p> : inputs}
-      <h3>Outputs</h3>
-      {outputs.length == 0 ? <p>None</p> : outputs}
+    <div className="summary-container">
+      <p className="summary-banner">Summary</p>
+      <p className="summary-input-label">Inputs</p>
+      <ul className="summary-input-list">
+        {inputs.length == 0 ? <li>None</li> : inputs}
+      </ul>
+      <p className="summary-output-label">Outputs</p>
+      <ul className="summary-output-list">
+        {outputs.length == 0 ? <li>None</li> : outputs}
+      </ul>
     </div>
   );
 }
 
-function BuildingDetail({factory}) {
+function BuildingDetail({factory, factoryMutator}) {
   return (
-    <div>
-      <h1>Details</h1>
-      {factory.map(b => {
-        return (<div key={b.counter}>
-          <h3>{b.number} {b.building.name}</h3>
-          <h4>Ingredients</h4>
-          {b.recipe.ingredients.map(i => <p key={i.item}>{formatNumber(i.rate * b.number)} {i.item}</p>)}
-          <h4>Products</h4>
-          {b.recipe.products.map(i => <p key={i.item}>{formatNumber(i.rate * b.number)} {i.item}</p>)}
-        </div>);
+    <div className="details-container">
+      {factory.map((group, index) => {
+        const groupMutator = mutation => {
+          factoryMutator(factoryCopy => {
+            const groupCopy = Object.assign({}, group);
+            mutation(groupCopy);
+            factoryCopy[index] = groupCopy;
+          })
+        };
+        const deleteGroup = () => {
+          factoryMutator(factoryCopy => {
+            factoryCopy.splice(index, 1);
+          })
+        };
+        return (
+          <BuildingGroup key={group.counter} group={group} groupMutator={groupMutator} factoryMutator={factoryMutator} deleteGroup={deleteGroup} />
+        );
       })}
+      <AddGroupButton factoryMutator={factoryMutator}/>
     </div>
+  );
+}
+
+function BuildingGroup({group, groupMutator, deleteGroup}) {
+  const updateBuilding = event => groupMutator(newGroup => {
+    newGroup.building = buildingMap[event.target.value];
+    newGroup.recipe = getRecipes(newGroup.building)[0];
+  });
+  const updateRecipe = event => groupMutator(newGroup => {
+    newGroup.recipe = newGroup.building.recipes[event.target.value];
+  });
+  const updateBuildingNumber = event => groupMutator(newGroup => {
+    newGroup.number = sanitizePositiveNumber(event.target.value);
+  });
+  return (
+    <div className="building-group-container">
+      <DeleteBuildingButton deleteGroup={deleteGroup}/>
+      <select key="building" value={group.name} onChange={updateBuilding}>
+        {buildingList.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
+      </select>
+      Count:
+      <input type="text" value={group.number} onChange={updateBuildingNumber}></input>
+      <br/>
+      <select key="recipe" value={group.name} onChange={updateRecipe}>
+        {getRecipes(group.building).map(recipe =>
+          <option key={recipe.name} value={recipe.name}>{recipe.name}: ({recipe.ingredients.map(i => (i.rate * group.number) + " " + i.item).join(', ')}) -&gt; ({recipe.products.map(i => (i.rate * group.number) + " " + i.item).join(', ')})</option>)
+        }
+      </select>
+    </div>
+  );
+}
+
+function DeleteBuildingButton({deleteGroup}) {
+  return (
+    <button className="delete-button" onClick={deleteGroup}>X</button>
+  );
+}
+
+function AddGroupButton({factoryMutator}) {
+  const [counter, setCounter] = useState(0);
+  return (
+    <button onClick={() => {
+      factoryMutator((f) => f.push(defaultGroup(counter)));
+      setCounter(counter + 1);
+    }}>Add Group</button>
   );
 }
 
@@ -106,8 +171,19 @@ function addBuilding(factory, newBuilding) {
   return newFactory;
 }
 
+function defaultGroup(counter) {
+  const building = buildingList[0];
+  return {
+    building: building,
+    recipe: getRecipes(building)[0],
+    number: 1,
+    counter: counter,
+  };
+}
+
+// todo this is slow
 function getRecipes(building) {
-  return Object.entries(building.recipes).map(keyValue => keyValue[1]);
+  return Object.entries(building.recipes).map(keyValue => keyValue[1]).sort((r1, r2) => r1.name.localeCompare(r2.name));
 }
 
 function sanitizePositiveNumber(numberString) {
