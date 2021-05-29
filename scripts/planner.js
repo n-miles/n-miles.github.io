@@ -33,10 +33,10 @@ function BuildingSelection({factory, setFactory}) {
       </select>
       <select key="recipe" value={selectedRecipe.name} onChange={e => setSelectedRecipe(selectedBuilding.recipes[e.target.value])}>
         {getRecipes(selectedBuilding).map(recipe =>
-          <option key={recipe.name} value={recipe.name}>{recipe.name}: ({recipe.ingredients.map(i => i.rate + " " + i.item).join(', ')}) -&gt; ({recipe.products.map(i => i.rate + " " + i.item).join(', ')})</option>)
+          <option key={recipe.name} value={recipe.name}>{recipe.name}: ({recipe.ingredients.map(i => i.rate + " " + i.item).join(', ')}) ➔ ({recipe.products.map(i => i.rate + " " + i.item).join(', ')})</option>)
         }
       </select>
-      <input type="text" value={numBuildings} onChange={e => setNumBuildings(sanitizePositiveNumber(e.target.value))}></input>
+      <input type="text" className="building-count-input" value={numBuildings} onChange={e => setNumBuildings(sanitizePositiveNumber(e.target.value))}></input>
       <button onClick={() => {
         setBuildingCounter(buildingCounter + 1);
         setFactory(addBuilding(factory, {
@@ -148,10 +148,10 @@ function BuildingGroup({group, groupMutator, deleteGroup}) {
         {buildingList.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
       </select>
       #
-      <input type="text" value={group.number} onChange={updateBuildingNumber}></input>
+      <input type="text" value={group.number} className="building-count-input" onChange={updateBuildingNumber}></input>
       <br/>
       Recipe Search:
-      <input type="text" value={recipeSearchText}
+      <input type="text" value={recipeSearchText} className="recipe-search-box"
         onChange={e => setRecipeSearchText(e.target.value)}
         onFocus={e => setHasFocus(true)}
         onBlur={e => setTimeout(() => setHasFocus(false), 100)}></input>
@@ -162,30 +162,34 @@ function BuildingGroup({group, groupMutator, deleteGroup}) {
               <ul className="recipe-search-results-list">
                 {matchingRecipes.map(r =>
                   <li key={r.name} className="recipe-search-result" onClick={() => groupMutator(g => g.recipe = r)}>
-                    {r.name}
+                    <b>{r.name}</b>
                     <br/>
-                    ({r.ingredients.map(i => `${i.rate}/m ${i.item}`).join(', ')}) -&gt; ({r.products.map(i => `${i.rate}/m ${i.item}`).join(', ')})
+                    ({r.ingredients.map(i => `${i.rate}/m ${i.item}`).join(', ')}) ➔ ({r.products.map(i => `${i.rate}/m ${i.item}`).join(', ')})
                   </li>
                 )}
               </ul>
             }
           </div>
       }
-      <p className="recipe-details-name">{group.recipe.name}</p>
+      <p className="recipe-details-name"><b>{group.recipe.name}</b></p>
       <div className="recipe-details">
         <div className="recipe-details-inputs">
           {group.recipe.ingredients.map(i =>
             <p key={i.item}>
               <span className="recipe-details-item-name">{i.item}</span>
-              <span className="recipe-details-item-number">{formatNumber(i.rate * group.number)}/m</span>
+              <span className="recipe-details-item-number">
+                <ItemNumberInput currentValue={formatNumber(i.rate * group.number)} onChange={e => groupMutator(g => g.number = sanitizePositiveNumber(e.target.value) / i.rate)}/>/m
+              </span>
             </p>)}
         </div>
-        <div className="recipe-arrow">--&gt;</div>
+        <div className="recipe-arrow">➔</div>
         <div className="recipe-details-outputs">
           {group.recipe.products.map(i =>
             <p key={i.item}>
               <span className="recipe-details-item-name">{i.item}</span>
-              <span className="recipe-details-item-number">{formatNumber(i.rate * group.number)}/m</span>
+              <span className="recipe-details-item-number">
+                <ItemNumberInput currentValue={formatNumber(i.rate * group.number)} onChange={e => groupMutator(g => g.number = sanitizePositiveNumber(e.target.value) / i.rate)}/>/m
+              </span>
             </p>)}
         </div>
       </div>
@@ -197,6 +201,12 @@ function DeleteBuildingButton({deleteGroup}) {
   return (
     <button className="delete-button" onClick={deleteGroup}>X</button>
   );
+}
+
+function ItemNumberInput({currentValue, onChange}) {
+  return (
+    <input className="item-number-input" type="text" value={currentValue} onChange={onChange}></input>
+  )
 }
 
 function AddGroupButton({factoryMutator}) {

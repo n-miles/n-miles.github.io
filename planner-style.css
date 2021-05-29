@@ -1,5 +1,21 @@
 body {
-    font-size: 1.1em
+    font-size: 1.1em;
+    font-family:  'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+input[type="text"], select {
+    font-family:  'Open Sans', 'Helvetica Neue', sans-serif;
+    padding: 0.1em .3em;
+    border-radius: 5px;
+    outline: 0;
+}
+
+input[type="text"]:focus {
+    border-color: #328ca8;
+}
+
+.building-count-input, .item-number-input {
+    width: 8ch;
 }
 
 ul {
@@ -16,6 +32,7 @@ ul {
     border-style: solid;
     border-width: 1px;
     border-radius: 5px;
+    flex-shrink: 0;
 }
 
 .planner-container > div {
@@ -35,11 +52,18 @@ ul {
 
 .summary-input-label, .summary-output-label {
     font-size: 1.2em;
+    margin: 0px;
+}
+
+.summary-input-list, .summary-output-list {
+    margin: 0px;
+    margin-bottom: .2em;
 }
 
 .summary-input-item, .summary-output-item {
     display: flex;
     justify-content: space-between;
+    margin: 0px;
 }
 
 .summary-input-item-name, .summary-output-item-name {
@@ -62,9 +86,10 @@ ul {
 
 .recipe-details-inputs, .recipe-details-outputs {
     flex-direction: column;
+    justify-content: center;
 }
 
-.recipe-details-inputs > p, recipe-details-outputs > p {
+.recipe-details-inputs > p, .recipe-details-outputs > p {
     display: flex;
     justify-content: space-between;
 }
@@ -72,10 +97,17 @@ ul {
 .recipe-arrow {
     align-items: center;
     margin: 1em;
+    font-size: 2em;
 }
 
 .recipe-details-item-name {
     margin-right: .5em;
+}
+
+.recipe-details > * {
+    padding: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 .recipe-details-inputs > p, .recipe-details-outputs > p {
@@ -87,9 +119,17 @@ ul {
     text-align: center;
 }
 
+.recipe-search-result {
+    border-top-style: solid;
+    border-width: 1px;
+    border-color: black;
+    padding: .1em;
+}
+
 .recipe-search-results-list > li:hover {
     background-color: #eee;
-  cursor: pointer;
+    cursor: pointer;
+    
 }
 
 .details-container {
