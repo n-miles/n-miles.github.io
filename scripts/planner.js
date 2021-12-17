@@ -68,17 +68,33 @@ function Summary({factory}) {
   }, {});
 
   const inputs = Object.entries(totals)
-      .filter(t => t[1] > 0)
+      .filter(t => t[1] > 0.00001)
       .map(t =>
         <li key={t[0]} className="summary-input-item">
           <span className="summary-input-item-name">{t[0]}</span><span className="summary-input-item-quantity">{formatNumber(t[1])}/m</span>
         </li>);
   const outputs = Object.entries(totals)
-      .filter(t => t[1] < 0)
+      .filter(t => t[1] < -0.00001)
       .map(t =>
         <li key={t[0]} className="summary-output-item">
           <span className="summary-output-item-name">{t[0]}</span><span className="summary-input-item-quantity">{formatNumber(-t[1])}/m</span>
         </li>);
+  const materials = factory.reduce((counters, item) => {
+    item.building.materials.forEach(m => {
+      const quantity = m.quantity * Math.ceil(item.number);
+      counters[m.resource] = counters[m.resource] ? counters[m.resource] + quantity : quantity;
+    })
+    return counters;
+  }, {});
+
+  const materialUi = Object.entries(materials)
+      .map(m =>
+        <li key={m[0]} className="summary-output-item">
+          <span className="summary-output-item-name">{m[0]}</span><span className="summary-input-item-quantity">{formatNumber(m[1])}</span>
+        </li>
+        );
+
+  console.log(factory);
 
   return (
     <div className="summary-container">
@@ -90,6 +106,10 @@ function Summary({factory}) {
       <p className="summary-output-label">Outputs</p>
       <ul className="summary-output-list">
         {outputs.length == 0 ? <li>None</li> : outputs}
+      </ul>
+      <p className="summary-output-label">Materials</p>
+      <ul className="summary-output-list">
+        {materialUi.length == 0 ? <li>None</li> : materialUi}
       </ul>
     </div>
   );
